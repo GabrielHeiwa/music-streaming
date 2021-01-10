@@ -19,16 +19,27 @@ export default {
             music_name = file_data.filename,
             music_duration = req.body.music_duration;
 
-            console.log(req.body)
-        
+        console.log(req.body);
 
-        res.status(200).json({
-            msg: "Upload and save make with success",
+        const music_data = {
             music_title: music_title,
             music_duration: music_duration,
-            music_name: file_data.filename,
-            music_extension: extension
-        });
+            music_name: music_name,
+            // music_extension: extension
+        };
+        try {
+            await connection("musics")
+            .insert(music_data)
+            .then(() => res.status(200).json({
+                msg: "Upload and save make with success",
+            }))
+            .catch(err => console.error("It's not possible to make the register in database"));
+        } catch (err) {
+            res.status(400).json({
+                msg: "Error in the upload process",
+                err: err
+            })
+        }
     },
 
     async music_save(req: Request, res: Response) {
@@ -49,7 +60,7 @@ export default {
     async musci_stream(req: Request, res: Response) {
         const music_name = req.params.music_name;
         const path_folder_music = path.resolve(__dirname, "..", "database", "music", music_name);
-        
+
         const getStat = promisify(fs.stat);
         const stat = await getStat(path_folder_music);
 
