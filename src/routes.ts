@@ -9,4 +9,8 @@ routes.post("/music_upload",
     Music_Controller.music_upload
 );
 
+routes.post("/music_save",
+    Music_Controller.music_save
+);
+
 export default routes;

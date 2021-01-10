@@ -1,4 +1,3 @@
-import knex from "knex";
-import config from "../../knexfile";
+import Database_Config from "../config/database.config";
 
-export default knex(config);
+export default Database_Config;
