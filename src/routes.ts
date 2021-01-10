@@ -25,4 +25,8 @@ routes.get("/music_folder_index",
     Music_Controller.music_folder_index
 );
 
+routes.get("/music_syncronization", 
+    Music_Controller.music_syncronization
+);
+
 export default routes;

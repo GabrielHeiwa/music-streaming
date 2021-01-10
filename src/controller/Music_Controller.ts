@@ -110,7 +110,47 @@ export default {
                 msg: "Error in the operation of get all musics saved in the folder",
                 err: err.message
             });
-            
+
         }
+    },
+
+    async music_syncronization(req: Request, res: Response) {
+        try {
+            const musics_in_the_database = await connection("musics")
+                .select("music_name")
+                .then((musics: I_Music_Data[]) => musics)
+
+            const readdir = promisify(fs.readdir);
+            const musics_in_the_folder = await readdir(
+                path.resolve(__dirname, "..", "database", "music"),
+                "utf-8",
+            );
+
+            let musics_not_syncronization = [];
+
+            musics_in_the_database.forEach(item => {
+                if (!musics_in_the_folder.includes(item.music_name))
+                    musics_not_syncronization.push(item);
+            })
+
+            if (musics_not_syncronization.length > 0)
+                return res.status(400).json({
+                    msg: "Exist music out in the folder!",
+                    musics: musics_not_syncronization
+                })
+
+            res.status(200).send("ok")
+
+        } catch (err) {
+            return res.status(400).json({
+                msg: "Error in the operation of get all musics in the database",
+                err: err.message
+            });
+
+        };
+
+
+
+
     }
 }
