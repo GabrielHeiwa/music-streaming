@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import { promisify } from "util";
 import connection from "../database/connection";
+import bytes from "bytes";
 
 interface I_Music_Data {
     music_title: string,
@@ -12,7 +13,22 @@ interface I_Music_Data {
 
 export default {
     async music_upload(req: Request, res: Response) {
-        res.sendStatus(200);
+        const file_data = req.file,
+            extension = file_data.originalname.split(".")[1],
+            music_title = file_data.originalname,
+            music_name = file_data.filename,
+            music_duration = req.body.music_duration;
+
+            console.log(req.body)
+        
+
+        res.status(200).json({
+            msg: "Upload and save make with success",
+            music_title: music_title,
+            music_duration: music_duration,
+            music_name: file_data.filename,
+            music_extension: extension
+        });
     },
 
     async music_save(req: Request, res: Response) {
@@ -39,7 +55,7 @@ export default {
 
         res.writeHead(200, {
             'Content-Type': 'audio/ogg',
-            'Content-Length': stat.size
+            'Content-Length': bytes(stat.size)
         });
 
         const music_stream = fs.createReadStream(path_folder_music);

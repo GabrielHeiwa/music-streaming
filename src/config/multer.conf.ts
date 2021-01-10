@@ -8,7 +8,7 @@ export default multer({
             callback(null, path.resolve(__dirname, "..", "database", "music"))
         },
         filename: (req, file, callback) => {
-            callback(null, `${Date.now()}-${file.originalname}`)
+            callback(null, `${Date.now()}-${file.originalname}`);
         },
     })
 });
