@@ -19,8 +19,6 @@ export default {
             music_name = file_data.filename,
             music_duration = req.body.music_duration;
 
-        console.log(req.body);
-
         const music_data = {
             music_title: music_title,
             music_duration: music_duration,
@@ -71,5 +69,25 @@ export default {
 
         const music_stream = fs.createReadStream(path_folder_music);
         music_stream.pipe(res);
+    },
+
+    async music_index(req: Request, res: Response) {
+        try {
+            return await connection("musics")
+                .select("*")
+                .then(musics => res.status(200).json({
+                    msg: "Sucess in get all musics in database",
+                    musics: musics
+                }))
+                .catch(err => res.status(400).json({
+                    msg: "Error in try to get all music in database"
+                }));
+                
+        } catch (err) {
+            return res.status(400).json({
+                msg: "Failend in try to list all music in database",
+                err: err.message
+            })
+        }
     }
 }

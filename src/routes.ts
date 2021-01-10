@@ -17,4 +17,8 @@ routes.get("/music_stream/:music_name",
     Music_Controller.musci_stream
 );
 
+routes.get("/music_index",
+    Music_Controller.music_index
+);
+
 export default routes;
