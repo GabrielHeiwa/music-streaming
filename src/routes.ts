@@ -17,8 +17,12 @@ routes.get("/music_stream/:music_name",
     Music_Controller.musci_stream
 );
 
-routes.get("/music_index",
-    Music_Controller.music_index
+routes.get("/music_database_index",
+    Music_Controller.music_database_index
+);
+
+routes.get("/music_folder_index",
+    Music_Controller.music_folder_index
 );
 
 export default routes;

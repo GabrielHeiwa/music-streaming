@@ -27,11 +27,11 @@ export default {
         };
         try {
             await connection("musics")
-            .insert(music_data)
-            .then(() => res.status(200).json({
-                msg: "Upload and save make with success",
-            }))
-            .catch(err => console.error("It's not possible to make the register in database"));
+                .insert(music_data)
+                .then(() => res.status(200).json({
+                    msg: "Upload and save make with success",
+                }))
+                .catch(err => console.error("It's not possible to make the register in database"));
         } catch (err) {
             res.status(400).json({
                 msg: "Error in the upload process",
@@ -71,7 +71,7 @@ export default {
         music_stream.pipe(res);
     },
 
-    async music_index(req: Request, res: Response) {
+    async music_database_index(req: Request, res: Response) {
         try {
             return await connection("musics")
                 .select("*")
@@ -82,12 +82,35 @@ export default {
                 .catch(err => res.status(400).json({
                     msg: "Error in try to get all music in database"
                 }));
-                
+
         } catch (err) {
             return res.status(400).json({
                 msg: "Failend in try to list all music in database",
                 err: err.message
             })
+        }
+    },
+
+    async music_folder_index(req: Request, res: Response) {
+        try {
+            return fs.readdir(path.resolve(__dirname, "..", "database", "music"), "utf-8", (err, files) => {
+                if (err)
+                    return res.status(400).json({
+                        msg: "Failed in the acess folder of musics",
+                        err: err.message
+                    });
+
+                return res.status(200).json({
+                    msg: "Sucess in the acess folder of all musics",
+                    musics: files
+                });
+            });
+        } catch (err) {
+            return res.status(400).json({
+                msg: "Error in the operation of get all musics saved in the folder",
+                err: err.message
+            });
+            
         }
     }
 }
