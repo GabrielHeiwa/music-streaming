@@ -13,4 +13,8 @@ routes.post("/music_save",
     Music_Controller.music_save
 );
 
+routes.get("/music_stream/:music_name", 
+    Music_Controller.musci_stream
+);
+
 export default routes;
