@@ -4,40 +4,45 @@ import fs from "fs";
 import { promisify } from "util";
 import connection from "../database/connection";
 import bytes from "bytes";
+import aws from "aws-sdk";
+import { WriteEventStream } from "aws-sdk/clients/pinpoint";
 
 interface I_Music_Data {
-    music_title: string,
-    music_duration: string,
     music_name: string,
 }
 
+let musics_not_syncronization = [];
+
 export default {
     async music_upload(req: Request, res: Response) {
-        const file_data = req.file,
-            extension = file_data.originalname.split(".")[1],
-            music_title = file_data.originalname,
-            music_name = file_data.key,
-            music_duration = req.body.music_duration;
-
-        const music_data = {
-            music_title: music_title,
-            music_duration: music_duration,
-            music_name: music_name,
-            // music_extension: extension
-        };
+        const { originalname: music_title, key, size, location: music_url } = req.file;
+        const music_extension = music_title.split(".")[1];
+        const { music_duration } = req.body;
 
         try {
             await connection("musics")
-                .insert(music_data)
+                .insert({
+                    music_title,
+                    music_duration,
+                    music_name: key,
+                    music_extension,
+                    music_size: bytes(size),
+                    music_url
+                })
                 .then(() => res.status(200).json({
                     msg: "Upload and save make with success",
                 }))
-                .catch(err => console.error("It's not possible to make the register in database"));
+                .catch(err => res.status(400).json({
+                    msg: "It's not possible to make the register in database",
+                    err: err.message,
+                }));
+
         } catch (err) {
             res.status(400).json({
                 msg: "Error in the upload process",
                 err: err
-            })
+            });
+
         }
     },
 
@@ -119,6 +124,7 @@ export default {
         try {
             const musics_in_the_database = await connection("musics")
                 .select("music_name")
+                .select("music_url")
                 .then((musics: I_Music_Data[]) => musics)
 
             const readdir = promisify(fs.readdir);
@@ -126,8 +132,6 @@ export default {
                 path.resolve(__dirname, "..", "database", "music"),
                 "utf-8",
             );
-
-            let musics_not_syncronization = [];
 
             musics_in_the_database.forEach(item => {
                 if (!musics_in_the_folder.includes(item.music_name))
@@ -149,9 +153,15 @@ export default {
             });
 
         };
+    },
 
-
-
-
+    async music_restore() {
+        const s3 = new aws.S3();
+        let path_folder = path.resolve(__dirname, "..", "database", "music");
+        for (let i = 0; i < musics_not_syncronization.length; i++) {
+            const params = { Bucket: 'uploadexample2703', Key: musics_not_syncronization[i].music_name };
+            var file = fs.createWriteStream(`${path_folder}/${musics_not_syncronization[i].music_name}`);
+            s3.getObject(params).createReadStream().pipe(file);
+        }
     }
 }

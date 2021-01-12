@@ -11,12 +11,14 @@ const storages = {
         acl: "public-read",
         key: (req, file, callback) => {
             callback(null, `${Date.now()}-${file.originalname}`);
+            
         },
     }),
 
     local: multer.diskStorage({
         destination: (req, file, callback) => {
-            callback(null, path.resolve(__dirname, "..", "database", "music"))
+            callback(null, path.resolve(__dirname, "..", "database", "music"));
+
         },
         filename: (req, file, callback) => {
             file.key = `${Date.now()}-${file.originalname}`

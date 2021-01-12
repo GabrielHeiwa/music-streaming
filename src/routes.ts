@@ -29,4 +29,8 @@ routes.get("/music_syncronization",
     Music_Controller.music_syncronization
 );
 
+routes.get("/music_restore", 
+    Music_Controller.music_restore
+);
+
 export default routes;
