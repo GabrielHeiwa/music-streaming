@@ -14,7 +14,7 @@ routes.post("/music_save",
 );
 
 routes.get("/music_stream/:music_name", 
-    Music_Controller.musci_stream
+    Music_Controller.music_stream
 );
 
 routes.get("/music_database_index",

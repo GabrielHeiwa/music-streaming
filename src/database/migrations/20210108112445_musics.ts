@@ -7,6 +7,8 @@ export async function up(knex: Knex): Promise<void> {
         table.string("music_title");
         table.string("music_name");
         table.string("music_duration");
+        table.string("music_extension");
+        table.string("music_url");
     });
 }
 

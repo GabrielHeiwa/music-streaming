@@ -1,6 +1,8 @@
 import express from "express";
 import routes from "./routes";
 import path from "path";
+import dotenv from "dotenv";
+dotenv.config()
 
 const server = express();
 // Server configuration

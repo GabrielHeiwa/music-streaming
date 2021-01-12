@@ -16,7 +16,7 @@ export default {
         const file_data = req.file,
             extension = file_data.originalname.split(".")[1],
             music_title = file_data.originalname,
-            music_name = file_data.filename,
+            music_name = file_data.key,
             music_duration = req.body.music_duration;
 
         const music_data = {
@@ -25,6 +25,7 @@ export default {
             music_name: music_name,
             // music_extension: extension
         };
+
         try {
             await connection("musics")
                 .insert(music_data)
@@ -55,7 +56,7 @@ export default {
         }
     },
 
-    async musci_stream(req: Request, res: Response) {
+    async music_stream(req: Request, res: Response) {
         const music_name = req.params.music_name;
         const path_folder_music = path.resolve(__dirname, "..", "database", "music", music_name);
 
