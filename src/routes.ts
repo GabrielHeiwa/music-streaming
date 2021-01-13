@@ -9,9 +9,9 @@ routes.post("/music_upload",
     Music_Controller.music_upload
 );
 
-routes.post("/music_save",
-    Music_Controller.music_save
-);
+// routes.post("/music_save",
+//     Music_Controller.music_save
+// );
 
 routes.get("/music_stream/:music_name", 
     Music_Controller.music_stream

@@ -8,9 +8,11 @@ import aws from "aws-sdk";
 
 interface I_Music_Data {
     music_name: string,
+    music_url: string,
+    music_extension: string
 }
 
-let musics_not_syncronization = [];
+let musics_not_syncronization: I_Music_Data[] = [];
 
 export default {
     async music_upload(req: Request, res: Response) {
@@ -21,9 +23,9 @@ export default {
         try {
             await connection("musics")
                 .insert({
-                    music_title,
+                    music_title : music_title.split('.')[0],
                     music_duration,
-                    music_name: key,
+                    music_name: key.split('.')[0],
                     music_extension,
                     music_size: bytes(size),
                     music_url
@@ -45,21 +47,6 @@ export default {
         }
     },
 
-    async music_save(req: Request, res: Response) {
-        const music_data: I_Music_Data = req.body;
-
-        try {
-            await connection("musics")
-                .insert(music_data)
-                .then(() =>
-                    res.status(201).send("Music saved with sucess"));
-
-        } catch (err) {
-            res.status(500).send("Saved error");
-
-        }
-    },
-
     async music_stream(req: Request, res: Response) {
         const music_name = req.params.music_name;
         const path_folder_music = path.resolve(__dirname, "..", "database", "music", music_name);
@@ -67,13 +54,14 @@ export default {
         const getStat = promisify(fs.stat);
         const stat = await getStat(path_folder_music);
 
+        const content_Type = `audio/${music_name.split('.')[1]}`;
         res.writeHead(200, {
-            'Content-Type': 'audio/ogg',
+            'Content-Type': content_Type,
             'Content-Length': bytes(stat.size)
         });
 
         const music_stream = fs.createReadStream(path_folder_music);
-        music_stream.pipe(res);
+        music_stream.pipe(res)
     },
 
     async music_database_index(req: Request, res: Response) {
@@ -124,6 +112,7 @@ export default {
             const musics_in_the_database = await connection("musics")
                 .select("music_name")
                 .select("music_url")
+                .select("music_extension")
                 .then((musics: I_Music_Data[]) => musics)
 
             const readdir = promisify(fs.readdir);
@@ -154,7 +143,7 @@ export default {
 
         };
     },
-
+    
     async music_restore(req: Request, res: Response) {
         const s3 = new aws.S3();
         let path_folder = path.resolve(__dirname, "..", "database", "music");
@@ -166,13 +155,13 @@ export default {
                 console.log("Finish download for all musics");                
                 return res.status(200).send("All music restore!");
             }
-
-
-            const params = { Bucket: process.env.BUCKET, Key: musics_not_syncronization[index].music_name };
-            var file = fs.createWriteStream(`${path_folder}/${musics_not_syncronization[index].music_name}`, {});
+            const key = `${musics_not_syncronization[index].music_name}.${musics_not_syncronization[index].music_extension}`;
+            const params = { Bucket: process.env.BUCKET, Key: key};
+            const path_file = `${path_folder}/${key}`;
+            const stream_file = fs.createWriteStream(path_file, {});
             s3.getObject(params)
                 .createReadStream()
-                .pipe(file)
+                .pipe(stream_file)
                 .on("error", err => {
                     res.status(400).json({
                         msg: "Error in process the download music from database",

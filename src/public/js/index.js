@@ -15,7 +15,7 @@ input_file.addEventListener("change", (e) => {
 btn.addEventListener("click", async () => {
     const data = new Date(null);
     data.setSeconds(audio.duration);
-    const music_duration = data.toISOString().substr(12,8);
+    const music_duration = data.toISOString().substr(12,8).split('.')[0];
 
     const Frm_Data = new FormData();
     Frm_Data.append("music", input_file.files[0]);
