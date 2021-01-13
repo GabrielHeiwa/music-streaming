@@ -5,7 +5,6 @@ import { promisify } from "util";
 import connection from "../database/connection";
 import bytes from "bytes";
 import aws from "aws-sdk";
-import { WriteEventStream } from "aws-sdk/clients/pinpoint";
 
 interface I_Music_Data {
     music_name: string,
@@ -141,6 +140,7 @@ export default {
             if (musics_not_syncronization.length > 0)
                 return res.status(400).json({
                     msg: "Exist music out in the folder!",
+                    restore: "http://localhost:3000/music_restore",
                     musics: musics_not_syncronization
                 })
 
@@ -155,13 +155,36 @@ export default {
         };
     },
 
-    async music_restore() {
+    async music_restore(req: Request, res: Response) {
         const s3 = new aws.S3();
         let path_folder = path.resolve(__dirname, "..", "database", "music");
-        for (let i = 0; i < musics_not_syncronization.length; i++) {
-            const params = { Bucket: 'uploadexample2703', Key: musics_not_syncronization[i].music_name };
-            var file = fs.createWriteStream(`${path_folder}/${musics_not_syncronization[i].music_name}`);
-            s3.getObject(params).createReadStream().pipe(file);
+        await download_music_for_restore(musics_not_syncronization.length - 1);
+
+        async function download_music_for_restore(index: number) {
+
+            if (index < 0) {
+                console.log("Finish download for all musics");                
+                return res.status(200).send("All music restore!");
+            }
+
+
+            const params = { Bucket: process.env.BUCKET, Key: musics_not_syncronization[index].music_name };
+            var file = fs.createWriteStream(`${path_folder}/${musics_not_syncronization[index].music_name}`, {});
+            s3.getObject(params)
+                .createReadStream()
+                .pipe(file)
+                .on("error", err => {
+                    res.status(400).json({
+                        msg: "Error in process the download music from database",
+                        err: err.message
+                    });
+                })
+                .on("open", () => console.log(`Starting download ${musics_not_syncronization[index].music_name}`))
+                .on("close", () => {
+                    console.log(`Finish downlaod the music ${musics_not_syncronization[index].music_name}`);
+                    musics_not_syncronization.pop();
+                    download_music_for_restore(index - 1);
+                });
         }
     }
 }
