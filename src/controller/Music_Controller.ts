@@ -13,6 +13,7 @@ interface I_Music_Data {
 }
 
 let musics_not_syncronization: I_Music_Data[] = [];
+const s3 = new aws.S3();
 
 export default {
     async music_upload(req: Request, res: Response) {
@@ -23,7 +24,7 @@ export default {
         try {
             await connection("musics")
                 .insert({
-                    music_title : music_title.split('.')[0],
+                    music_title: music_title.split('.')[0],
                     music_duration,
                     music_name: key.split('.')[0],
                     music_extension,
@@ -49,19 +50,45 @@ export default {
 
     async music_stream(req: Request, res: Response) {
         const music_name = req.params.music_name;
-        const path_folder_music = path.resolve(__dirname, "..", "database", "music", music_name);
 
         const getStat = promisify(fs.stat);
-        const stat = await getStat(path_folder_music);
-
         const content_Type = `audio/${music_name.split('.')[1]}`;
-        res.writeHead(200, {
-            'Content-Type': content_Type,
-            'Content-Length': bytes(stat.size)
-        });
 
-        const music_stream = fs.createReadStream(path_folder_music);
-        music_stream.pipe(res)
+        try {
+            if (!fs.existsSync(path.resolve(__dirname, "..", "database", "music", music_name))) {
+                const params = {
+                    Bucket: process.env.BUCKET,
+                    Key: music_name,
+                };
+
+                const streamS3 = s3.getObject(params);
+                return streamS3.createReadStream()
+                    .pipe(res)
+                    .on("finish", () => res.status(200).json({
+                        msg: "Music stream complete",
+                    }));
+            }
+
+            let path_folder_music = path.resolve(__dirname, "..", "database", "music", music_name);
+
+            const stat = await getStat(path_folder_music);
+
+            res.writeHead(200, {
+                'Content-Type': content_Type,
+                'Content-Length': bytes(stat.size)
+            });
+
+            const music_stream = fs.createReadStream(path_folder_music, {});
+            return music_stream.pipe(res);
+
+        } catch (err) {
+            const aws_file_link = `https://${process.env.BUCKET}.s3.${process.env.AWS_DEFAULT_REGION}.amazonaws.com/${music_name}`;
+
+            res.status(200).json({
+                msg: "Stream music error to the play.",
+                err: err.message,
+            }).redirect(aws_file_link);
+        }
     },
 
     async music_database_index(req: Request, res: Response) {
@@ -108,6 +135,7 @@ export default {
     },
 
     async music_syncronization(req: Request, res: Response) {
+        musics_not_syncronization = [];
         try {
             const musics_in_the_database = await connection("musics")
                 .select("music_name")
@@ -143,20 +171,19 @@ export default {
 
         };
     },
-    
+
     async music_restore(req: Request, res: Response) {
-        const s3 = new aws.S3();
         let path_folder = path.resolve(__dirname, "..", "database", "music");
         await download_music_for_restore(musics_not_syncronization.length - 1);
 
         async function download_music_for_restore(index: number) {
 
             if (index < 0) {
-                console.log("Finish download for all musics");                
+                console.log("Finish download for all musics");
                 return res.status(200).send("All music restore!");
             }
             const key = `${musics_not_syncronization[index].music_name}.${musics_not_syncronization[index].music_extension}`;
-            const params = { Bucket: process.env.BUCKET, Key: key};
+            const params = { Bucket: process.env.BUCKET, Key: key };
             const path_file = `${path_folder}/${key}`;
             const stream_file = fs.createWriteStream(path_file, {});
             s3.getObject(params)

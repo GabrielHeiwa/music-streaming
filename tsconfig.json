@@ -4,5 +4,10 @@
         "target": "ES2015",
         "esModuleInterop": true,
         "allowJs": true,
-    }
+        "outDir": "./dist",
+    },
+    "exclude": [
+        "./node_modules/*",
+        "./src/database/music/*"
+    ]
 }
